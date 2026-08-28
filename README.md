@@ -14,10 +14,9 @@ Convierte la cámara y el micrófono de tu Android en una webcam y un micrófono
 
 Para cualquier programa que elija cámara o micrófono —Zoom, Meet, Discord, OBS, Teams, el propio navegador— tu teléfono pasa a aparecer en la lista como una webcam cualquiera, sin que esa aplicación tenga que saber nada especial sobre PhoneCam ni sobre tu móvil.
 
-<img width="699" height="507" alt="1menu-simple-backup" src="https://github.com/user-attachments/assets/3b8e5da9-5ab4-475f-abd3-d931b7f6947e" />
-<img width="700" height="505" alt="2menu-rutas-simple-backup" src="https://github.com/user-attachments/assets/68d1b3d8-2c9b-4e98-b20e-6aece4bc9875" />
-<img width="708" height="509" alt="3menu-copiaauto-simple-backup" src="https://github.com/user-attachments/assets/e87fa98a-751a-4dd3-ba8e-76a20d35084c" />
-
+<img width="724" height="487" alt="1menu-phonecam" src="https://github.com/user-attachments/assets/6164c77a-71ab-4024-98da-5d2f823f85bb" />
+<img width="757" height="505" alt="2confi-avanza-menu" src="https://github.com/user-attachments/assets/07ee800c-a5cd-424f-9a6f-6a00cdd72d11" />
+<img width="556" height="239" alt="3conecta-telf-phonecam" src="https://github.com/user-attachments/assets/69f29481-3eb1-46d6-bd1d-c184279e59d0" />
 
 Por dentro combina tres piezas ya existentes y las coordina desde un único script:
 
