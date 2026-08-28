@@ -1,6 +1,7 @@
 <p align="center">
   <img src="assets/icon.png" alt="Icono de Simple-Backup" width="140">
 </p>
+
 # PhoneCam
 
 ![Versión 1.0.0](https://img.shields.io/badge/versi%C3%B3n-1.0.0-blue) ![Bash 4+](https://img.shields.io/badge/bash-%3E%3D4.0-4EAA25?logo=gnubash&logoColor=white) ![Linux Mint 22.3 Cinnamon](https://img.shields.io/badge/Linux%20Mint-22.3%20Cinnamon-87CF3E?logo=linuxmint&logoColor=white)
@@ -12,6 +13,11 @@ Convierte la cámara y el micrófono de tu Android en una webcam y un micrófono
 ## Qué es
 
 Para cualquier programa que elija cámara o micrófono —Zoom, Meet, Discord, OBS, Teams, el propio navegador— tu teléfono pasa a aparecer en la lista como una webcam cualquiera, sin que esa aplicación tenga que saber nada especial sobre PhoneCam ni sobre tu móvil.
+
+<img width="699" height="507" alt="1menu-simple-backup" src="https://github.com/user-attachments/assets/3b8e5da9-5ab4-475f-abd3-d931b7f6947e" />
+<img width="700" height="505" alt="2menu-rutas-simple-backup" src="https://github.com/user-attachments/assets/68d1b3d8-2c9b-4e98-b20e-6aece4bc9875" />
+<img width="708" height="509" alt="3menu-copiaauto-simple-backup" src="https://github.com/user-attachments/assets/e87fa98a-751a-4dd3-ba8e-76a20d35084c" />
+
 
 Por dentro combina tres piezas ya existentes y las coordina desde un único script:
 
