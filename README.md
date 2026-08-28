@@ -1,5 +1,6 @@
-[![Icono de PhoneCam](assets/icon.png)](assets/icon.png)
-
+<p align="center">
+  <img src="assets/icon.png" alt="Icono de Simple-Backup" width="140">
+</p>
 # PhoneCam
 
 ![Versión 1.0.0](https://img.shields.io/badge/versi%C3%B3n-1.0.0-blue) ![Bash 4+](https://img.shields.io/badge/bash-%3E%3D4.0-4EAA25?logo=gnubash&logoColor=white) ![Linux Mint 22.3 Cinnamon](https://img.shields.io/badge/Linux%20Mint-22.3%20Cinnamon-87CF3E?logo=linuxmint&logoColor=white)
