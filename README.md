@@ -53,7 +53,7 @@ Conectarlas bien es más que "encenderlas a la vez". Al iniciar la webcam, Phone
 ## Instalación
 
 ```bash
-git clone https://github.com/filonux/Phonecam.git
+git clone https://github.com/filonux/PhoneCam.git
 cd Phonecam/script
 chmod +x phonecam.sh
 ./phonecam.sh install
