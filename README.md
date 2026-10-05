@@ -1,177 +1,197 @@
 <p align="center">
-  <img src="assets/icon.png" alt="Icono de Simple-Backup" width="140">
+  <img src="assets/phonecam-icon.png" alt="PhoneCam icon" width="140">
 </p>
 
 # PhoneCam
 
-![Versión 1.0.0](https://img.shields.io/badge/versi%C3%B3n-1.0.0-blue) ![Bash 4+](https://img.shields.io/badge/bash-%3E%3D4.0-4EAA25?logo=gnubash&logoColor=white) ![Linux Mint 22.3 Cinnamon](https://img.shields.io/badge/Linux%20Mint-22.3%20Cinnamon-87CF3E?logo=linuxmint&logoColor=white)
+[Español](README-es.md)
 
-Convierte la cámara y el micrófono de tu Android en una webcam y un micrófono más de tu Linux Mint, por cable USB. Sin instalar nada en el teléfono, sin Wi-Fi, sin nube: todo se queda entre tu móvil y tu PC.
+![Version 1.1.0](https://img.shields.io/badge/version-1.1.0-blue) ![Bash 4.4+](https://img.shields.io/badge/bash-%3E%3D4.4-4EAA25?logo=gnubash&logoColor=white) ![Linux Mint 22.3 Cinnamon](https://img.shields.io/badge/Linux%20Mint-22.3%20Cinnamon-87CF3E?logo=linuxmint&logoColor=white)
 
-> ⚠️ **PhoneCam está en español** — menús, avisos y comentarios del código. Si te interesa una versión en inglés, hay más detalles en [Idioma y roadmap](#idioma-y-roadmap).
+Turn your Android camera and microphone into an additional webcam and microphone on Linux Mint over USB. No app to install on the phone, no Wi-Fi, no cloud: everything stays between your phone and your PC.
 
-## Qué es
+> **Language:** PhoneCam includes its full interface in English and Spanish. It detects the system locale automatically (Spanish when applicable, English otherwise), and you can switch instantly with `L` in the text menu, from the language option in the graphical menu, or with `phonecam l`.
 
-Para cualquier programa que elija cámara o micrófono —Zoom, Meet, Discord, OBS, Teams, el propio navegador— tu teléfono pasa a aparecer en la lista como una webcam cualquiera, sin que esa aplicación tenga que saber nada especial sobre PhoneCam ni sobre tu móvil.
+## What's new in 1.1.0
 
-<img width="724" height="487" alt="1menu-phonecam" src="https://github.com/user-attachments/assets/6164c77a-71ab-4024-98da-5d2f823f85bb" />
-<img width="757" height="505" alt="2confi-avanza-menu" src="https://github.com/user-attachments/assets/07ee800c-a5cd-424f-9a6f-6a00cdd72d11" />
-<img width="556" height="239" alt="3conecta-telf-phonecam" src="https://github.com/user-attachments/assets/69f29481-3eb1-46d6-bd1d-c184279e59d0" />
+- **English and Spanish interface.** Menus, messages, installer and help now speak both languages and follow your system language. Switch any time with `phonecam l`, `L` in the text menu, or the graphical menu.
+- **Safer scrcpy download.** The official build is checked against its SHA-256 checksum, and the archive is validated before it is extracted. The minimum scrcpy version is now **2.3.1** (it was 2.2).
+- **Clearer failures.** Before starting, PhoneCam checks the phone's Android version (12+ for camera, 11+ for microphone) and requires audio to actually work. It then gives scrcpy 2 seconds (it was 1; adjustable with `PHONECAM_START_GRACE`) to prove it stays alive and, if it dies, shows the end of its log in the error instead of only pointing to the file.
+- **Screen control through ADB.** `TURN_SCREEN_OFF` is applied through ADB because scrcpy disables control in camera mode; `KEEP_AWAKE` is applied the same way, and the phone's previous Android value is restored when capture ends.
+- **More robust.** Configuration, launcher, service and PID files are now written atomically, so an interrupted write cannot leave a half-written file. The background agent also waits for your desktop session at login.
+- **Also new:** `phonecam help-connection` (`ayuda` still works), the `mic-voice-recognition` audio source (scrcpy 3.2+), the app icon bundled inside the script, screenshots in both languages, and a regression test suite (`bash tests/run_all.sh`, no phone needed).
 
-Por dentro combina tres piezas ya existentes y las coordina desde un único script:
+## What it is
 
-- **[scrcpy](https://github.com/Genymobile/scrcpy)** captura la cámara y el audio del teléfono por USB.
-- **v4l2loopback** expone esa captura como un dispositivo de vídeo `/dev/video*` normal.
-- **PipeWire/PulseAudio** expone el audio como un micrófono virtual normal.
+For any program that lets you choose a camera or microphone — Zoom, Meet, Discord, OBS, Teams, your browser — your phone appears in the device list like any ordinary webcam, without that application needing to know anything special about PhoneCam or your phone.
 
-PhoneCam no reinventa nada de eso: se encarga de instalarlo, conectarlo todo correctamente entre sí y ponerte un menú delante para que no tengas que recordar ni un solo comando.
+<img width="718" alt="PhoneCam menu" src="assets/screenshots/1-menu-phonecam-en.png" />
+<img width="801" alt="PhoneCam advanced settings" src="assets/screenshots/2-advance-settings-en.png" />
+<img width="559" alt="How to connect the phone" src="assets/screenshots/3-how-to-connect-en.png" />
 
-Conectarlas bien es más que "encenderlas a la vez". Al iniciar la webcam, PhoneCam le pide a scrcpy solo la cámara —sin pantalla, sin control remoto, para no gastar recursos de más— y la vuelca en el dispositivo de v4l2loopback. Al iniciar el micrófono, le pide solo audio y enruta él mismo el flujo de sonido hasta el micrófono virtual; si no lo consigue en unos segundos, te avisa y te explica cómo terminarlo a mano en `pavucontrol`.
+Under the hood it combines three existing pieces and coordinates them from one script:
 
-## Ventajas
+- **[scrcpy](https://github.com/Genymobile/scrcpy)** captures the phone camera and audio over USB.
+- **v4l2loopback** exposes that capture as a normal `/dev/video*` device.
+- **PipeWire/PulseAudio** exposes the audio as a normal virtual microphone.
 
-- **Todo en un único archivo.** Instalador, desinstalador, CLI, agente en segundo plano, plantilla de configuración, lanzador `.desktop` y unidad `systemd --user` viven en un solo `.sh`. Se lee de un tirón, se audita de un tirón y se copia donde haga falta sin arrastrar una carpeta de dependencias.
-- **100% local.** Ni cuentas, ni nube, ni Wi-Fi entre el móvil y el PC: todo pasa por el cable USB vía ADB (Android Debug Bridge). Una vez instalado, funciona sin conexión a internet.
-- **Nada que instalar en el teléfono.** No hay APK de por medio. PhoneCam usa la depuración USB que Android ya trae de fábrica en sus opciones de desarrollador.
-- **Aparece como hardware de verdad.** La webcam es un `/dev/video*` estándar y el micrófono, un dispositivo PipeWire/PulseAudio normal. Cualquier programa que sepa elegir cámara o micrófono los ve directamente, sin integraciones ni plugins específicos.
-- **Se encarga de scrcpy por ti.** El paquete `scrcpy` de los repositorios de Mint/Ubuntu suele ir muy atrasado —a menudo por la serie 1.x—, muy por debajo de la 2.2 que PhoneCam necesita. Por eso no depende de ese paquete: comprueba la versión instalada y, si falta o se queda corta, descarga la build oficial más reciente desde los releases de GitHub y la deja lista en `~/.local/bin`, sin pedir sudo ni tocar el resto del sistema.
-- **Detección automática, con bandeja del sistema si quieres.** Un agente en segundo plano vigila la conexión USB y arranca (o pregunta, o ignora) la webcam y el micrófono según el modo que elijas; al desconectar el teléfono, para la captura sola. Con `yad` instalado añade además un icono en la bandeja con acceso directo a todo. Más detalles en [Detección automática y bandeja del sistema](#detección-automática-y-bandeja-del-sistema).
-- **El menú se adapta a lo que está pasando, no solo te dice qué falló.** Tanto en la versión gráfica (zenity) como en la de texto, la cabecera muestra de un vistazo si el teléfono está conectado y si la webcam o el micrófono ya están activos; las opciones cambian solas ("Detener webcam" en vez de "Iniciar" si ya está encendida, "Detener todo" solo si hay algo que detener) y cada una indica qué necesita el sistema antes de pulsarla. Si algo falla, aparece en una ventana de error en vez de perderse en una terminal que nadie mira; si sale bien, te enteras por una notificación aunque hayas cambiado de ventana.
-- **La configuración se valida y se aplica al momento.** El formulario de configuración avanzada comprueba el formato de resolución, FPS y bitrate de audio antes de guardar nada, así que un valor mal escrito no se convierte más tarde en un fallo críptico de scrcpy. Un cambio guardado se aplica de inmediato a la sesión en marcha, sin tener que cerrar y volver a abrir el menú.
-- **Pensado para no quedarse colgado ni pisarse a sí mismo.** Cualquier llamada a ADB tiene un límite de tiempo, así que un teléfono en mal estado o un servidor `adb` atascado no puede congelar el menú ni el agente. Antes de dar una webcam o un micrófono por activos, comprueba que el proceso siga siendo de verdad `scrcpy` y no un PID reciclado por otro programa; al detenerlos, espera a que cierren de verdad antes de devolver el control, para que un reinicio inmediato no se encuentre el dispositivo todavía ocupado.
-- **Instala y reinstala sin pisar lo que ya tenías.** Si el número de dispositivo de vídeo que usa por defecto (`/dev/video42`) ya está ocupado por otra cámara o capturadora, PhoneCam elige automáticamente el siguiente libre. Reinstalar reutiliza ese número y la configuración que ya tenías —no la sobrescribe— y de paso vuelve a comprobar (y si hace falta, actualizar) scrcpy.
-- **Desinstala con cuidado.** Quita el comando, el lanzador, el servicio y el micrófono virtual sin tocar los paquetes del sistema; solo borra el enlace a scrcpy si sigue apuntando a la copia que descargó PhoneCam (si pusiste tú tu propio scrcpy en su lugar, lo deja tal cual). Es capaz incluso de borrar limpiamente el propio archivo desde el que se está ejecutando, relanzándose primero desde una copia temporal. Para la webcam virtual (que sí necesita `sudo`) te deja los comandos exactos para revertirla. Más detalles en [Desinstalar](#desinstalar).
-- **Funciona sin entorno gráfico completo.** Con `zenity` instalado tienes menús y formularios; sin él, cae automáticamente a un menú de texto igual de funcional. Ningún paso se queda bloqueado solo por faltar una herramienta gráfica.
+PhoneCam does not reinvent any of that: it installs the pieces, connects them correctly, and puts a menu in front of you so you do not have to remember a single command.
 
-## Compatibilidad
+Getting them to work together is more than "turning them on at the same time". When starting the webcam, PhoneCam asks scrcpy for the camera only — no screen, no remote control, so it avoids wasting resources — and sends it to the v4l2loopback device. When starting the microphone, it asks scrcpy for audio only and routes that audio stream to the virtual microphone; if automatic routing does not succeed within a few seconds, it tells you how to finish it manually in `pavucontrol`.
 
-- **Sistema operativo:** pensado y probado en Linux Mint 22.3 (Cinnamon). El instalador depende de `apt`, así que cualquier base Ubuntu/Debian debería comportarse igual; en distribuciones sin `apt` (Fedora, Arch...) tendrás que instalar las dependencias a mano e invocar el script directamente, sin pasar por `install`.
-- **Arquitectura:** la descarga automática de scrcpy solo tiene build oficial estática para `x86_64`. En otras arquitecturas necesitas instalar scrcpy 2.2+ por tu cuenta; PhoneCam lo usará igual una vez esté en el `PATH`.
-- **Teléfono:** cualquier Android con depuración USB. El modo cámara de scrcpy exige Android 12 o superior y la captura de micrófono, Android 11 o superior —es un límite del propio scrcpy, no algo que PhoneCam pueda saltarse—; por debajo de eso, scrcpy arranca pero la webcam o el micrófono no llegan a funcionar. Además, PhoneCam exige scrcpy 2.2 o superior en el PC para ambos modos.
-- **Privilegios:** no hace falta root en el teléfono. En el PC, `sudo` solo se pide durante la instalación (paquetes del sistema, módulo `v4l2loopback`, grupos `video`/`plugdev`); el resto —incluida la descarga de scrcpy— corre como usuario normal, salvo que te falten a la vez `curl` y `wget` al ir a descargar scrcpy (no debería pasarte tras una instalación normal, porque `curl` ya es una de las dependencias), en cuyo caso se ofrece instalar `curl` con `sudo` antes de seguir.
+## Advantages
 
-## Instalación
+- **One self-contained script.** Installer, uninstaller, CLI, background agent, configuration template, `.desktop` launcher, `systemd --user` unit and even the application icon live in one `.sh`; the icon is the last block of the file (base64 inside comments, never executed), so a copy of the script on its own installs everything. `assets/` only holds the repository's images.
+- **100% local.** No accounts, no cloud, no Wi-Fi between the phone and the PC: everything goes over USB through ADB (Android Debug Bridge). Once installed, it works without an internet connection.
+- **Nothing to install on the phone.** There is no APK involved. PhoneCam uses Android's built-in USB debugging from Developer options.
+- **It appears as real hardware.** The webcam is a standard `/dev/video*` device and the microphone is a normal PipeWire/PulseAudio device. Any program that can choose a camera or microphone sees them directly, without plugins or application-specific integrations.
+- **It handles scrcpy for you.** The `scrcpy` package in Mint/Ubuntu repositories can lag behind the upstream features and version PhoneCam requires. So PhoneCam does not depend on that package: it checks the installed version and, if it is missing or too old, downloads the latest official release build from GitHub and leaves it ready in `~/.local/bin`, without sudo and without touching the rest of the system.
+- **Automatic detection, with a system tray option.** A background agent watches the USB connection and starts (or asks, or ignores) the webcam and microphone according to the mode you choose; when the phone disconnects, it stops the capture. With `yad` installed it also adds a tray icon with quick access to everything. See [Automatic detection and system tray](#automatic-detection-and-system-tray).
+- **The menu adapts to what is happening, instead of only telling you what failed.** In both the graphical (zenity) and text versions, the header shows at a glance whether the phone is connected and whether the webcam or microphone is active; options change automatically ("Stop webcam" instead of "Start" when it is already running, "Stop everything" only when there is something to stop), and each option tells you what the system needs before you use it. When something fails, the error appears in a window instead of disappearing into an unattended terminal; when it succeeds, you get a notification even if another window is in front.
+- **The configuration is validated and applied immediately.** The advanced settings form checks resolution, FPS and audio bitrate before saving anything, so a typo does not turn into a cryptic scrcpy failure later. A saved change applies immediately to the current session; you do not need to close and reopen the menu.
+- **Designed not to hang or trip over itself.** Every ADB call has a timeout, so a broken phone or a stuck `adb` server cannot freeze the menu or the agent. Before marking a webcam or microphone as active, it verifies that the PID still belongs to `scrcpy` rather than a different process; when stopping, it waits for the process to really exit before handing control back, so an immediate restart does not hit a still-busy device.
+- **Installs and reinstalls without overwriting what you already had.** If the default video device number (`/dev/video42`) is already occupied by another camera or capture device, PhoneCam automatically chooses the next free one. Reinstalling reuses that number and the configuration you already had — it does not overwrite it — and also checks (and updates if needed) scrcpy.
+- **Uninstalls carefully.** It removes the command, launcher, service and virtual microphone without touching system packages; it only removes the scrcpy symlink if it still points to the copy downloaded by PhoneCam (if you replaced it with your own scrcpy, it leaves it alone). It can even cleanly remove the script it is running from by relaunching first from a temporary copy. For the virtual webcam (which does require `sudo`) it prints the exact commands needed to revert it. See [Uninstall](#uninstall).
+- **Works without a full graphical environment.** With `zenity` installed you get menus and forms; without it, PhoneCam falls back automatically to a fully functional text menu. No step becomes blocked only because a graphical helper is missing.
+
+## Compatibility
+
+- **Operating system:** designed and tested on Linux Mint 22.3 (Cinnamon). The installer relies on `apt`, so Ubuntu/Debian bases should behave the same; on distributions without `apt` (Fedora, Arch...) you will need to install dependencies manually and call the script directly, without `install`.
+- **Architecture:** the automatic scrcpy download currently targets the official static Linux `x86_64` build. On other architectures you need to install scrcpy 2.3.1+ yourself; PhoneCam will use it once it is in `PATH`.
+- **Phone:** any Android phone with USB debugging. scrcpy's camera mode requires Android 12 or newer and microphone capture requires Android 11 or newer — those are scrcpy limitations, not something PhoneCam can bypass. Below those versions, scrcpy may start but the webcam or microphone will not work. PhoneCam also requires scrcpy 2.3.1 or newer on the PC for both modes.
+- **Privileges:** no root is needed on the phone. On the PC, `sudo` is requested only during installation (system packages, `v4l2loopback`, `video`/`plugdev` groups); everything else — including the scrcpy download — runs as a normal user, except when both `curl` and `wget` are missing and PhoneCam offers to install `curl` with `sudo`.
+
+## Installation
 
 ```bash
 git clone https://github.com/filonux/PhoneCam.git
-cd Phonecam/script
+cd PhoneCam/script
 chmod +x phonecam.sh
 ./phonecam.sh install
 ```
 
-No lo ejecutes con `sudo`: el propio instalador lo pedirá cuando de verdad lo necesite. Si quieres una instalación desatendida (sin preguntas, salvo la contraseña de sudo del sistema), usa `./phonecam.sh install --yes`.
+Do not run it with `sudo`: the installer will ask for it only when it actually needs it. For an unattended installation (without questions, except for the system sudo password), use `./phonecam.sh install --yes`.
 
-Durante la instalación, el script:
+During installation, the script:
 
-1. Instala por `apt` lo que hace falta: `adb`, `curl`, `v4l2loopback-dkms`, `v4l-utils`, `pipewire`, `pipewire-pulse`, `wireplumber`, `pulseaudio-utils`, `zenity`, `yad`, `libnotify-bin` y las cabeceras del kernel en uso.
-2. Descarga scrcpy (la build oficial, no la de los repositorios) si no lo tienes o tu versión es demasiado antigua.
-3. Configura `v4l2loopback` para que la webcam virtual sobreviva a un reinicio —si el número de dispositivo que usa por defecto ya está ocupado por otra cámara o capturadora, elige automáticamente el siguiente libre—, y añade tu usuario a los grupos `video` y `plugdev` si hace falta.
-4. Se copia a sí mismo a `~/.local/bin/phonecam` y añade esa carpeta al `PATH` si no estaba ya.
-5. Escribe una configuración por defecto (si no tenías una) y crea el lanzador de aplicaciones y el servicio `systemd --user` que detecta el teléfono automáticamente.
+1. Installs the required packages with `apt`: `adb`, `curl`, `v4l2loopback-dkms`, `v4l-utils`, `pipewire`, `pipewire-pulse`, `wireplumber`, `pulseaudio-utils`, `zenity`, `yad`, `libnotify-bin` and the headers for the running kernel.
+2. Downloads scrcpy (the official build, not the repository package) if you do not have it or the installed version is too old.
+3. Configures `v4l2loopback` so the virtual webcam survives a reboot — if the default device number is already occupied by another camera or capture device, it automatically chooses the next free one — and adds your user to the `video` and `plugdev` groups when necessary.
+4. Copies itself to `~/.local/bin/phonecam` and adds that directory to `PATH` if it is not already there.
+5. Writes a default configuration (if you did not already have one), installs the custom 1024×1024 RGBA application icon, and creates the application launcher and `systemd --user` service that detects the phone automatically.
 
-Dos cosas a tener en cuenta:
+Two things to keep in mind:
 
-- Si te añadió a los grupos `video` o `plugdev`, tienes que **cerrar sesión y volver a entrar** (o reiniciar) para que el permiso surta efecto — hasta entonces, `/dev/video42` (o el número que se haya asignado) existirá pero no podrás escribir en él.
-- Si tu equipo tiene **Secure Boot activado**, es probable que sea la primera vez que se compila un módulo de kernel por DKMS: puede que en el siguiente arranque aparezca la pantalla azul de "MOK Management", donde solo hay que aceptar el enrolamiento de la clave nueva.
+- If it added you to the `video` or `plugdev` groups, you must **log out and back in** (or reboot) for the permission change to take effect — until then, `/dev/video42` (or whichever number was assigned) may exist but you will not be able to write to it.
+- If your computer has **Secure Boot enabled**, this may be the first time a kernel module is compiled through DKMS: on the next boot you may see the blue "MOK Management" screen, where you simply accept enrollment of the new key.
 
-Todo lo que crea la instalación queda aquí:
+Everything created by the installation lives here:
 
-| Qué | Dónde |
+| What | Where |
 | --- | --- |
-| Comando instalado | `~/.local/bin/phonecam` |
-| Configuración | `~/.config/phonecam/phonecam.conf` |
-| Registros | `~/.local/share/phonecam/logs/` |
-| Estado en ejecución (PID de cada proceso) | `$XDG_RUNTIME_DIR/phonecam/` (o `~/.cache/phonecam/` si no hay `XDG_RUNTIME_DIR`) |
-| scrcpy descargado por PhoneCam | `~/.local/share/phonecam/scrcpy/` |
-| Lanzador de aplicaciones | `~/.local/share/applications/phonecam.desktop` |
-| Servicio del agente | `~/.config/systemd/user/phonecam-agent.service` |
+| Installed command | `~/.local/bin/phonecam` |
+| Configuration | `~/.config/phonecam/phonecam.conf` |
+| Logs | `~/.local/share/phonecam/logs/` |
+| Runtime state (PID files and per-mode startup locks) | `$XDG_RUNTIME_DIR/phonecam/` (or `~/.cache/phonecam/` without `XDG_RUNTIME_DIR`) |
+| scrcpy downloaded by PhoneCam | `~/.local/share/phonecam/scrcpy/` |
+| Application icon | `~/.local/share/icons/hicolor/1024x1024/apps/phonecam.png` |
+| Application launcher | `~/.local/share/applications/phonecam.desktop` |
+| Agent service | `~/.config/systemd/user/phonecam-agent.service` |
 
-## Comandos
+The icon is installed from `assets/phonecam-icon.png` when you install from the repository folder, and from the copy embedded in the script otherwise (an icon that is already installed is kept in that case). `assets/icon2.png` to `icon5.png` are alternative icons: copy one over the installed icon file to use it (reinstalling from the repository folder restores the default; reinstalling from the installed command keeps yours).
 
-Una vez instalado, `phonecam` funciona como cualquier otro comando del sistema. Si prefieres no instalarlo, exactamente lo mismo funciona ejecutando `./phonecam.sh <comando>` desde `script/`.
+## Commands
 
-| Comando | Qué hace |
+Once installed, `phonecam` works like any other system command. If you prefer not to install it, the same thing works by running `./phonecam.sh <command>` from `script/`.
+
+| Command | What it does |
 | --- | --- |
-| `phonecam` / `phonecam menu` | Abre el menú — gráfico si hay `zenity`, de texto si no. Es lo que se ejecuta si no pasas ningún comando. |
-| `phonecam webcam` | Inicia solo la cámara del teléfono como webcam. |
-| `phonecam mic` | Inicia solo el micrófono del teléfono. |
-| `phonecam both` | Inicia cámara y micrófono a la vez. |
-| `phonecam stop` | Detiene todos los procesos de PhoneCam. |
-| `phonecam status` | Estado actual: conexión del teléfono, procesos activos, dispositivos virtuales. |
-| `phonecam cameras` | Lista las cámaras disponibles en el teléfono. |
-| `phonecam choose-cam` | Elige y guarda la cámara predeterminada — útil si el teléfono tiene varias. |
-| `phonecam config` | Abre la configuración avanzada (formulario gráfico, o el archivo en tu editor si no hay `zenity`). |
-| `phonecam ayuda` | Guía rápida de cómo conectar y autorizar el teléfono. |
-| `phonecam version` | Muestra la versión instalada. |
-| `phonecam install [--yes]` | Instala PhoneCam y sus dependencias. |
-| `phonecam uninstall` | Desinstala PhoneCam. |
-| `phonecam help` (o `-h` / `--help`) | Lista de comandos, con una línea de qué hace cada uno. |
+| `phonecam` / `phonecam menu` | Opens the menu — graphical with `zenity`, text otherwise. This is what runs if you pass no command. |
+| `phonecam webcam` | Starts only the phone camera as a webcam. |
+| `phonecam mic` | Starts only the phone microphone. |
+| `phonecam both` | Starts the camera and microphone together. |
+| `phonecam stop` | Stops all PhoneCam processes. |
+| `phonecam status` | Current status: phone connection, active processes, virtual devices. |
+| `phonecam cameras` | Lists the cameras available on the phone. |
+| `phonecam choose-cam` | Chooses and saves the default camera — useful when the phone has several. |
+| `phonecam config` | Opens advanced settings (graphical form, or your editor if `zenity` is unavailable). |
+| `phonecam help-connection` | Quick guide for connecting and authorizing the phone. `ayuda` and `help-conexion` still work as compatibility aliases. |
+| `phonecam version` | Shows the installed version. |
+| `phonecam install [--yes]` | Installs PhoneCam and its dependencies. |
+| `phonecam uninstall` | Uninstalls PhoneCam. |
+| `phonecam l` | Toggles the interface language between English and Spanish and saves the choice. |
+| `phonecam help` (or `-h` / `--help`) | Lists the commands, with one line describing each. |
 
-(`phonecam agent` también existe, pero es de uso interno: lo lanza el servicio `systemd --user` que crea el instalador para la detección automática — ver [Detección automática y bandeja del sistema](#detección-automática-y-bandeja-del-sistema). No hace falta ejecutarlo a mano.)
+(`phonecam agent` also exists, but it is internal: it is launched by the `systemd --user` service created by the installer for automatic detection — see [Automatic detection and system tray](#automatic-detection-and-system-tray). You do not need to run it manually.)
 
-## Cómo conectarlo por primera vez
+## Connecting it for the first time
 
-1. En el teléfono: **Ajustes → Acerca del teléfono**, toca 7 veces sobre "Número de compilación" para activar las Opciones de desarrollador.
-2. Entra en Opciones de desarrollador y activa **Depuración USB**.
-3. Conecta el teléfono al PC con un cable USB de **datos** (no todos los cables de carga lo son).
-4. En el teléfono aparecerá un aviso "Permitir depuración USB": acéptalo y marca "Recordar en este equipo" para no repetirlo cada vez.
-5. Ejecuta `phonecam menu` (o `phonecam webcam` / `mic` / `both` directamente).
+1. On the phone: **Settings → About phone**, tap "Build number" 7 times to enable Developer options.
+2. Open Developer options and enable **USB debugging**.
+3. Connect the phone to the PC with a **data-capable** USB cable (not every charging cable carries data).
+4. On the phone, accept the "Allow USB debugging" prompt and enable "Remember this computer" so you do not have to repeat it.
+5. Run `phonecam menu` (or `phonecam webcam` / `mic` / `both` directly).
 
-A partir de ahí, en la app donde quieras usarlo, elige el dispositivo como lo harías con cualquier cámara o micrófono normal: la webcam debería aparecer como **"PhoneCam"** (a veces se ve como "Dummy video device", según cómo la lea la app) y el micrófono como **"PhoneMic"**.
+From then on, in the application where you want to use it, select the device as you would any ordinary camera or microphone: the webcam should appear as **"PhoneCam"** (sometimes as "Dummy video device", depending on how the application reads it) and the microphone as **"PhoneMic"**.
 
-Si tienes varios teléfonos conectados a la vez, PhoneCam te deja elegir cuál usar en el menú gráfico (en el de texto, coge el primero que encuentra y te avisa); si el teléfono tiene varias cámaras (angular, frontal, etc.), `phonecam choose-cam` te deja fijar cuál quieres como predeterminada.
+If you have several phones connected at once, PhoneCam lets you choose which one to use in the graphical menu (the text menu uses the first one it finds and tells you); if the phone has several cameras (wide, front, etc.), `phonecam choose-cam` lets you set the one you want as the default.
 
-Esta misma guía está siempre a mano con `phonecam ayuda`, o desde la opción "❓ Cómo conectar el teléfono" del propio menú.
+The same guide is always available through `phonecam help-connection` (`ayuda` and `help-conexion` still work), or from the **"How to connect the phone"** option in the menu.
 
-## Configuración avanzada
+## Advanced settings
 
-`phonecam config` abre un formulario (o el archivo de texto, si no tienes `zenity`) sobre `~/.config/phonecam/phonecam.conf`:
+`phonecam config` opens a form (or the text file, if you do not have `zenity`) for `~/.config/phonecam/phonecam.conf`:
 
-| Campo | Qué controla | Por defecto |
+| Field | What it controls | Default |
 | --- | --- | --- |
-| `CAMERA_FACING` | Qué cámara usar por orientación: `back`, `front` o `external` | `back` |
-| `CAMERA_ID` | Fuerza una cámara concreta por ID (la fija `phonecam choose-cam`; tiene prioridad sobre `CAMERA_FACING`) | vacío |
-| `CAMERA_SIZE` | Resolución, formato `ANCHOxALTO` (vacío = la máxima que declare el teléfono) | vacío |
-| `CAMERA_FPS` | Fotogramas por segundo | `30` |
-| `VIDEO_QUALITY_PROFILE` | `balanced` (H.264, mínima latencia, recomendado para videollamadas) o `max` (H.265, más calidad, algo más de latencia de decodificación) | `balanced` |
-| `AUDIO_SOURCE` | Fuente de audio del teléfono: `mic`, `mic-unprocessed`, `mic-voice-communication` o `mic-camcorder` | `mic` |
-| `AUDIO_CODEC` | Códec del micrófono: `opus`, `aac`, `flac` o `raw` | `opus` |
-| `AUDIO_BITRATE` | Bitrate de audio, ej. `192K` | `192K` |
-| `AUTO_MODE` | Qué hacer al conectar el móvil: `ask`, `webcam`, `mic`, `both` u `off` | `ask` |
-| `TURN_SCREEN_OFF` | Apaga la pantalla del móvil al iniciar la captura | `false` |
-| `KEEP_AWAKE` | Evita que el móvil se bloquee mientras está conectado | `true` |
+| `PHONECAM_LANG` | Interface language: `auto`, `en` or `es` | `auto` |
+| `CAMERA_FACING` | Which camera to use by orientation: `back`, `front` or `external` | `back` |
+| `CAMERA_ID` | Forces a specific camera ID (set by `phonecam choose-cam`; takes priority over `CAMERA_FACING`) | empty |
+| `CAMERA_SIZE` | Resolution, in `WIDTHxHEIGHT` format (empty = the maximum declared by the phone) | empty |
+| `CAMERA_FPS` | Frames per second | `30` |
+| `VIDEO_QUALITY_PROFILE` | `balanced` (H.264, minimum latency, recommended for video calls) or `max` (H.265, better quality, slightly more decoding latency) | `balanced` |
+| `AUDIO_SOURCE` | Phone audio source: `mic` or, with scrcpy 3.2+, `mic-unprocessed`, `mic-voice-communication`, `mic-voice-recognition` or `mic-camcorder` | `mic` |
+| `AUDIO_CODEC` | Microphone codec: `opus`, `aac`, `flac` or `raw` | `opus` |
+| `AUDIO_BITRATE` | Audio bitrate, e.g. `192K` | `192K` |
+| `AUTO_MODE` | What to do when the phone connects: `ask`, `webcam`, `mic`, `both` or `off` | `ask` |
+| `TURN_SCREEN_OFF` | Turns the phone screen off after capture starts | `false` |
+| `KEEP_AWAKE` | Keeps the phone awake while PhoneCam is capturing, then restores its previous Android value | `true` |
 
-El propio archivo `.conf` trae comentarios explicando cada opción, así que también se puede editar a mano sin mirar esta tabla. Ahí viven además, aunque no en el formulario, el bitrate exacto de cada perfil de vídeo (`VIDEO_BITRATE_BALANCED` y `VIDEO_BITRATE_MAX`, 20M/30M por defecto), el dispositivo de vídeo virtual (`V4L2_DEVICE`) y los nombres de los dispositivos de audio virtuales (`MIC_SINK_NAME`, `MIC_SOURCE_NAME`).
+The `.conf` file itself contains concise comments explaining each option — in the interface language active at the time it was written (English or Spanish) — so it can also be edited by hand without referring to this table. It also contains, although not in the form, the exact video bitrate values for each profile (`VIDEO_BITRATE_BALANCED` and `VIDEO_BITRATE_MAX`, 20M/30M by default), the virtual video device (`V4L2_DEVICE`) and the names of the virtual audio devices (`MIC_SINK_NAME`, `MIC_SOURCE_NAME`).
 
-El formulario valida los campos de texto libre —resolución, FPS y bitrate de audio— antes de guardar nada, así que un valor mal escrito no acaba apareciendo después como un fallo críptico de scrcpy; el resto de campos son listas desplegables, así que no hay forma de dejarlos con un valor inválido. Cualquier cambio guardado se aplica de inmediato a la sesión en la que lo cambiaste; el agente en segundo plano lo recoge en la siguiente conexión del teléfono.
+`KEEP_AWAKE=true` is applied through Android's `stay_on_while_plugged_in` setting and the original numeric value is restored after the last PhoneCam capture stops (or, if the phone was unplugged during a capture, by the agent as soon as it is back). `TURN_SCREEN_OFF=true` is handled through ADB because scrcpy disables control in camera mode; Android 15+ uses the display power command, while older supported versions use the power key only when the reported wakefulness is clearly active.
 
-## Detección automática y bandeja del sistema
+After launching scrcpy, PhoneCam keeps watching it for 2 seconds: if scrcpy exits on its own (camera in use, a setting the phone rejects...), the start fails and shows the last lines of its log in `~/.local/share/phonecam/logs/`, instead of reporting an active capture. The environment variable `PHONECAM_START_GRACE=SECONDS` changes that wait; `0` turns it off.
 
-La instalación deja activo un agente (`phonecam agent`, gestionado como servicio `systemd --user`) que vigila la conexión del teléfono sin que tengas que abrir el menú:
+The form validates free-text fields — resolution, FPS and audio bitrate — before saving, so a bad value does not surface later as an opaque scrcpy failure; the remaining fields are combo boxes, so they cannot be left with an arbitrary invalid value. Configuration files are replaced atomically, so an interrupted write cannot leave a half-written `.conf` file. Saved changes apply immediately to the session where you made them; the background agent picks them up on the next phone connection.
 
-- Comprueba cada 2 segundos si hay un teléfono autorizado por ADB — sondeo local, sin usar red en ningún momento.
-- Al detectar uno nuevo, actúa según `AUTO_MODE` (ver tabla debajo).
-- Al desconectar el teléfono, detiene la captura que estuviera activa y te avisa con una notificación.
-- Recoge los cambios que hagas con `phonecam config` o `choose-cam` en la siguiente conexión del teléfono, sin que haga falta reiniciar el servicio a mano.
-- Si llega a fallar, `systemd` lo reinicia solo.
+## Automatic detection and system tray
 
-| `AUTO_MODE` | Qué hace el agente al conectar el teléfono |
+The installation leaves an agent (`phonecam agent`, managed as a `systemd --user` service) active and watching the phone connection without requiring you to open the menu:
+
+- It checks every 2 seconds for a phone authorized through ADB — local polling, with no network use at any point.
+- When a new phone is detected, it acts according to `AUTO_MODE` (see the table below).
+- When the phone disconnects, it stops any active capture and sends a notification.
+- It picks up changes made through `phonecam config` or `choose-cam` on the next phone connection, without requiring a manual service restart.
+- If it fails, `systemd` restarts it automatically.
+
+| `AUTO_MODE` | What the agent does when the phone connects |
 | --- | --- |
-| `ask` (por defecto) | Abre una ventana pequeña preguntando si quieres solo webcam, solo micrófono, ambos o no hacer nada. Si no tienes `zenity`, en su lugar te llega una notificación pidiéndote que abras `phonecam menu`. |
-| `webcam` / `mic` / `both` | Arranca ese modo directamente, sin preguntar nada. |
-| `off` | No hace nada automático; el uso manual con `phonecam` sigue disponible igual. |
+| `ask` (default) | Opens a small window asking whether you want webcam only, microphone only, both or nothing. Without `zenity`, it sends a notification asking you to open `phonecam menu`. |
+| `webcam` / `mic` / `both` | Starts that mode directly, without asking. |
+| `off` | Does nothing automatically; manual use through `phonecam` remains available. |
 
-Con `yad` instalado, además aparece un icono en la bandeja del sistema con accesos directos a: abrir el menú completo, solo webcam, solo micrófono, webcam + micrófono, ver el estado, detener todo, abrir la configuración y salir — esta última opción detiene el servicio de verdad, no solo esconde el icono.
+With `yad` installed, a system tray icon also appears with shortcuts to: open the full menu, webcam only, microphone only, webcam + microphone, view status, stop everything, open settings and exit — the last option stops the service for real instead of merely hiding the icon.
 
-## Desinstalar
+## Uninstall
 
 ```bash
 phonecam uninstall
 ```
 
-Tampoco lo ejecutes con `sudo`: se niega a arrancar como root, igual que el instalador. Detiene todos los procesos, desactiva y borra el agente en segundo plano, quita el comando instalado y el lanzador, libera el micrófono virtual y limpia los registros y archivos temporales. También borra la carpeta donde descargó scrcpy (`~/.local/share/phonecam/scrcpy/`); el enlace `~/.local/bin/scrcpy` solo lo borra si todavía apunta ahí, así que si en algún momento pusiste tú tu propio scrcpy en su lugar, no lo toca. Lo único que te pregunta antes de borrar es la configuración guardada en `~/.config/phonecam`; si respondes que no, se queda ahí por si reinstalas más adelante.
+Do not run it with `sudo`: it refuses to start as root, just like the installer. It stops all processes, disables and removes the background agent, removes the installed command and launcher, releases the virtual microphone, and cleans logs and temporary files. It also removes the directory where it downloaded scrcpy (`~/.local/share/phonecam/scrcpy/`); the `~/.local/bin/scrcpy` symlink is removed only if it still points there, so if you replaced it with your own scrcpy, it is left alone. The only thing it asks about before deleting is the saved configuration in `~/.config/phonecam`; if you answer no, it remains there in case you reinstall later.
 
-La webcam virtual no se revierte sola porque hacerlo necesita `sudo`: el propio comando imprime estos tres comandos exactos para hacerlo a mano cuando quieras.
+The virtual webcam is not reverted automatically because doing so requires `sudo`: the command prints the exact commands to run manually when you want to remove it.
 
 ```bash
 sudo rm -f /etc/modprobe.d/phonecam-v4l2loopback.conf
@@ -179,33 +199,49 @@ sudo rm -f /etc/modules-load.d/phonecam-v4l2loopback.conf
 sudo modprobe -r v4l2loopback
 ```
 
-Los paquetes del sistema (`v4l2loopback-dkms`, `pipewire`...) tampoco se desinstalan, por si los usa alguna otra aplicación; el propio comando te lo recuerda, aunque ahí ya te toca a ti decidir con `apt` qué paquetes quitar si quieres dejar el sistema completamente limpio.
+System packages (`v4l2loopback-dkms`, `pipewire`...) are not uninstalled either, because another application may use them; the command reminds you of that, while you can decide yourself what to remove with `apt` if you want a completely clean system.
 
-## Se lleva bien con Scriptya
+## Plays well with Scriptya
 
-[Scriptya](https://github.com/filonux/Scriptya) es otro proyecto de Filonux: un menú que organiza tus scripts en carpetas, los ejecuta con búsqueda difusa y puede convertir cualquiera de ellos —`phonecam.sh` incluido— en una app independiente con su propio icono, en el menú de aplicaciones o en el escritorio, sin tener que escribir un `.desktop` a mano.
+[Scriptya](https://github.com/filonux/Scriptya) is another Filonux project: a menu that organizes your scripts into folders, launches them with fuzzy search, and can turn any of them — including `phonecam.sh` — into an independent app with its own icon in the application menu or on the desktop, without writing a `.desktop` file by hand.
 
-Le puedes apuntar a la carpeta `script/` de este repositorio y lanzar PhoneCam desde ahí, o usar `scriptya --icons` para dejarlo instalado como app aparte. Scriptya también lee metadatos opcionales al principio de cada script (nombre para el menú, descripción, si pide confirmación, si necesita `sudo`...); `phonecam.sh` todavía no los incluye, pero es un candidato natural para una futura actualización.
+You can point it at the `script/` folder in this repository and launch PhoneCam from there, or use `scriptya --icons` to install it as a separate app. Scriptya also reads optional metadata at the top of each script (menu name, description, confirmation requirements, whether it needs `sudo`...); `phonecam.sh` does not include that metadata yet, but it is a natural candidate for a future update.
 
-## Idioma y roadmap
+## Language and roadmap
 
-PhoneCam está en español: menús, avisos, mensajes de estado y comentarios del código. No hay versión en inglés por ahora.
+PhoneCam includes the full interface in English and Spanish: menus, prompts, status messages, forms, installer, uninstaller, notifications, help text, and the texts generated for the launcher and service. The script comments are kept in English and focus on behavior and safety rather than historical implementation notes.
 
-**Mini-roadmap**, sujeto a que haya interés real:
+By default, PhoneCam detects the locale from `LC_ALL`, `LC_MESSAGES` or `LANG`: if it starts with `es`, Spanish is used; in every other case, English is used. You can force the language in `~/.config/phonecam/phonecam.conf` with `PHONECAM_LANG="es"` or `PHONECAM_LANG="en"`, or return to automatic detection with `auto`. An exported `PHONECAM_LANG` takes priority over the file for that run, e.g. `PHONECAM_LANG=en phonecam status`, which is handy when reporting a bug.
 
-- [ ] Traducción completa a inglés (menús, ayuda, mensajes)
-- [ ] Paquete `.deb` para instalar con un doble clic, sin pasar por `git clone`
+For a quick switch, press `L` or `l` in the text menu, select **Change language** in the graphical menu, or run `phonecam l`. The choice is saved and used by later invocations.
 
-Si te interesa cualquiera de las dos cosas, abre un issue y dilo — es la forma más simple de que se sepa que hay gente esperándolo.
+**Mini-roadmap**, subject to real interest:
 
-## Contribuir
+- [x] Translate the interface into English — the project started Spanish-only; it is now available in both Spanish and English (see [Language](#language-and-roadmap)).
+- [ ] `.deb` package for one-click installation without `git clone`
 
-Los issues y pull requests son bienvenidos. Hay plantillas para reportar un fallo o proponer una mejora, y la guía completa está en CONTRIBUTING.md. Este proyecto sigue el código de conducta descrito en CODE_OF_CONDUCT.md; si necesitas reportar algo relacionado con seguridad de forma privada, mira SECURITY.md.
+If you are interested in an improvement, open an issue and say so — it is the simplest way to show that people are waiting for it.
 
-## Licencia
+## Testing
 
-Consulta el archivo [LICENSE](LICENSE) de este repositorio.
+The project includes a focused regression suite covering the bilingual interface and the existing behavior. From the project root, run the complete suite:
+
+```bash
+bash tests/run_all.sh
+```
+
+It needs Bash 4.4 or newer and `python3` with Pillow (`python3-pil`), besides the usual tools of a desktop Linux; the full list is in [CONTRIBUTING](.github/CONTRIBUTING.md#test-requirements).
+
+The suite covers locale precedence, automatic detection, persistent `en`/`es` switching, the `L`/`l` shortcut, GUI and terminal menu dispatch, camera discovery and selection, advanced configuration parsing and validation, webcam/microphone/both start and stop cycles, PipeWire/PulseAudio routing, V4L2 checks, scrcpy version and download fallbacks, atomic file replacement, Android API preflight, `--require-audio`, Android power-state handling, PID/lock safety, installation and uninstallation guards, the automatic agent, help output, error paths, and invariants on the arguments passed to the capture stack. It also renders the UI text with Linux fonts and runs a pseudo-TTY menu test plus an end-to-end simulated user journey with controlled external tools. `tests/walkthrough_en.sh`, included in that same run, goes a step further: it drives the real installed binary through a full non-root lifecycle — fresh machine, install, daily use, a language toggle, and uninstall — and checks the literal text printed at runtime rather than just how the message catalog is wired statically. The tests are designed to run without a physical phone or real system audio/video changes.
+
+## Contributing
+
+Issues and pull requests are welcome. There are templates for reporting bugs or proposing improvements, and the full guide is in [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md). This project follows the code of conduct described in [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md); for private security reports, see [.github/SECURITY.md](.github/SECURITY.md).
+
+## License
+
+See the [LICENSE](LICENSE.txt) file in this repository.
 
 ---
 
-Hecho por **[Filonux](https://github.com/filonux)**.
+Made by **[Filonux](https://github.com/filonux)**.
