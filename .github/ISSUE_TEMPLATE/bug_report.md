@@ -1,33 +1,45 @@
 ---
-name: Reporte de error
-about: Algo no funciona como debería
+name: Bug report
+about: Something is not working as it should
 title: "[BUG] "
 labels: bug
 assignees: ''
 ---
 
-## Descripción del problema
+## Problem description
 
-Explica claramente qué está pasando.
+Explain clearly what is happening.
 
-## Pasos para reproducirlo
+## Steps to reproduce
 
-## Comportamiento esperado
+1.
+2.
+3.
 
-Qué debería haber pasado en su lugar.
+## Expected behavior
 
-## Capturas de pantalla
+What should have happened instead.
 
-Si aplica, añade capturas que ayuden a explicar el problema.
+## Screenshots
 
-## Entorno
+If applicable, add screenshots that help explain the problem.
 
-## Mensajes de error / salida de terminal
+## Environment
+
+- Distro and version:
+- Session: X11 / Wayland
+- PhoneCam version (`phonecam version`):
+- scrcpy version (`scrcpy --version`):
+- Phone model and Android version:
+
+## Error messages / terminal output
+
+Tip: running with `PHONECAM_LANG=en` (e.g. `PHONECAM_LANG=en phonecam status`) keeps the output in English.
 
 ```
-(pega aquí la salida)
+(paste the output here)
 ```
 
-## Contexto adicional
+## Additional context
 
-Cualquier otro detalle que pueda ser útil (elemento concreto que falla, si es de usuario/sistema/systemd/cron, etc.).
+Any other detail that might be useful (the specific command or menu option that fails, whether it happens from the menu, the CLI, or the background agent, etc.).
