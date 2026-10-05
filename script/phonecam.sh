@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # PhoneCam — use an Android phone as a webcam and microphone over USB (Linux Mint).
+# Copyright (C) 2026 Filonux - GPLv3 license (see LICENSE.txt)
 # Video: scrcpy (phone camera) --v4l2-sink--> v4l2loopback node, /dev/video42 by default, listed by apps as "PhoneCam".
 # Audio: scrcpy (phone mic, played locally) -> route_audio_to_mic moves that stream into the null sink PhoneMicSink ->
 #        PhoneMic, a remap-source of PhoneMicSink.monitor, is what apps record. A remap-source rather than the monitor itself:
