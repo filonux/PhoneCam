@@ -1,23 +1,23 @@
 ---
-name: Solicitud de función
-about: Proponer una idea o mejora para el proyecto
+name: Feature request
+about: Suggest an idea or improvement for the project
 title: "[FEATURE] "
 labels: enhancement
 assignees: ''
 ---
 
-## ¿Qué problema resuelve?
+## What problem does it solve?
 
-Describe qué necesidad o molestia te lleva a proponer esto. Ej: "Actualmente no hay forma de..."
+Describe the need or annoyance behind this proposal. E.g. "Currently there is no way to..."
 
-## Solución propuesta
+## Proposed solution
 
-Describe cómo te imaginas que funcionaría.
+Describe how you imagine it would work.
 
-## Alternativas consideradas
+## Alternatives considered
 
-¿Hay alguna otra forma de resolverlo que hayas pensado o probado?
+Is there another way to solve it that you have thought about or tried?
 
-## Contexto adicional
+## Additional context
 
-Capturas, ejemplos de otras herramientas, o cualquier detalle que ayude a entender mejor la propuesta.
+Screenshots, examples from other tools, or any detail that helps explain the proposal.
