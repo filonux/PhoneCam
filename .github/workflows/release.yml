@@ -1,0 +1,59 @@
+name: Release
+
+# Publishes a GitHub Release when a version tag is pushed, e.g.:
+#   git tag v1.1.0 && git push origin v1.1.0
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    name: Check tag matches script version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Compare tag with PHONECAM_VERSION
+        run: |
+          script_version="$(sed -n 's/^PHONECAM_VERSION="\(.*\)"$/\1/p' script/phonecam.sh)"
+          if [ -z "$script_version" ]; then
+            echo "::error::Could not read PHONECAM_VERSION from script/phonecam.sh"
+            exit 1
+          fi
+          if [ "v${script_version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match PHONECAM_VERSION=${script_version} in script/phonecam.sh"
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: check-version
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Publish release
+    needs: ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write   # required to create the release
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir dist
+          cp script/phonecam.sh dist/
+          (cd dist && sha256sum phonecam.sh > SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" dist/phonecam.sh dist/SHA256SUMS \
+            --title "PhoneCam ${GITHUB_REF_NAME#v}" \
+            --generate-notes \
+            --verify-tag

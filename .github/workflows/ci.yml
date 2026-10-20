@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:   # lets release.yml reuse this exact pipeline before publishing
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      # Pinned on purpose: the ShellCheck packaged in Ubuntu 24.04 (0.9.0) flags
+      # SC2119/SC2120 on start_both, which 0.11 no longer reports. A pinned version
+      # keeps the CI result identical to running ShellCheck locally.
+      - name: Install ShellCheck 0.11.0
+        run: |
+          python3 -m pip install --user --break-system-packages --quiet shellcheck-py==0.11.0.1
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # SC2163 is excluded because `export "$line"` deliberately exports a "NAME=value"
+      # string, which the regex on the same line has already validated.
+      - name: Run ShellCheck
+        run: shellcheck --exclude=SC2163 script/phonecam.sh
+
+  tests:
+    name: Test suite
+    runs-on: ubuntu-24.04   # same base as Linux Mint 22.x
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      # python3-pil: the only third-party Python module the suite uses.
+      # pulseaudio*: lets test_real_phone_simulation.sh run instead of skipping itself.
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-pil pulseaudio pulseaudio-utils
+
+      - name: Run the test suite
+        run: bash tests/run_all.sh
